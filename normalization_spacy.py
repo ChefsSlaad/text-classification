@@ -1,8 +1,8 @@
 #!/usr/bin/python3
 
 import unicodedata
-import string
 import spacy
+import numpy
 from collections import Counter
 
 sp = spacy.load('nl_core_news_md')
@@ -31,6 +31,9 @@ def pre_process_text(textblock):
 
 def bag_of_words(tokenized_set):
         return Counter(tokenized_set)
+
+
+
 
 in_3 = r"""
     Al maanden problemen met het WiFi netwerk in huis. Volgens mijn abonnement
