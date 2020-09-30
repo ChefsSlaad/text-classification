@@ -26,3 +26,5 @@ bronnen:
 http://blog.refine-it.nl/begrijpend-lezen-met-python-en-nlp/
 https://spacy.io/models/nl
 https://stackabuse.com/python-for-nlp-tokenization-stemming-and-lemmatization-with-spacy-library/
+
+https://towardsdatascience.com/text-classification-in-python-dd95d264c802
