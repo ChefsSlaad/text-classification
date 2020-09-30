@@ -3,97 +3,66 @@
 import unicodedata
 import spacy
 import numpy
+from itertools import groupby
 from collections import Counter
-
-sp = spacy.load('nl_core_news_md')
-
-
-def remove_accent_characters(textblock):
-    nfkd_form = unicodedata.normalize('NFKD', textblock)
-    return u"".join([c for c in nfkd_form if not unicodedata.combining(c)])
+import re
 
 
-def tokenize(textblock):
-    return sp(textblock)
+class normalizer:
 
+    def __init__(self, word_set = 'nl_core_news_md'):
+#        self.tokenize = spacy.load('nl_core_news_md')
+        pass
 
-def is_stop_word(input_string, lang='dutch'):
-    return input_string in spacy.lang.nl.stop_words.STOP_WORDS
+    def bag_of_words(self, textblock):
+        return Counter(self.pre_process_text(textblock))
 
+    def remove_accent_characters(self, textblock):
+        """
+            remove and replace all non-asci unicode characters. return the
+            textblock with the asci equivalent
+        """
+        nfkd_form = unicodedata.normalize('NFKD', textblock)
+        return u"".join([c for c in nfkd_form if not unicodedata.combining(c)])
 
-def pre_process_text(textblock):
-    result = []
-    for word in tokenize(remove_accent_characters(textblock)):
-        lem = word.lemma_
-        if not (is_stop_word(lem) or word.is_punct or word.is_space) :
-            result.append(lem)
-    return result
+    def is_stop_word(input_string, lang='dutch'):
+        return input_string in spacy.lang.nl.stop_words.STOP_WORDS
 
-def bag_of_words(tokenized_set):
-        return Counter(tokenized_set)
+    def spellcheck(self, word):
+        """
+        spellcheck checks the spelling of the word and retuns a corrected
+        word in the case of a spelling error
+        """
+        return word # not implemented
 
+    def pre_process_text(self, textblock):
+        result = []
+        for word in tokenize(remove_accent_characters(textblock)):
+            word = spellcheck(word)
+            lem = word.lemma_
+            if not (is_stop_word(lem) or word.is_punct or word.is_space) :
+                result.append(lem)
+        return result
 
+    def read_csv_file(self, filename):
+        """
+        parses a csv file and returns a dataframe containing the record
+        as well as the following metadata:
+        * bag of words
+        """
+        with open(filename, 'r') as f:
 
-
-in_3 = r"""
-    Al maanden problemen met het WiFi netwerk in huis. Volgens mijn abonnement
-    moet ik een downloadsnelheid hebben van 250 mbps. Echter de verschillende
-    speeltoestel laten zien dat de downloadsnelheid niet meer is dan 45 mbps.
-    Gevolg Met thuiswerken knalt de verbinding er constant uit bij
-    Microsoftteams.
-    Omdat mijn dochter volgend week examen moet doen is de betrouwbaarheid
-    van de verbinding belangrijk. Na veel gedoe zou er nu eindelijk een
-    monteur langs komen. Volgens De website van Ziggo stuurt de monteur een
-    SMS als hij onderweg is. Geen sms gehad wel een gesprek gemist omdat
-    ik in een conference call zat. Blijkt de monteur bij de buren te hebben
-    gestaan en daar een briefje in de bus gegooid. Ook niet aangebeld
-    want mijn buurman was thuis.
-    Ziggo vervolgens gebeld. Antwoord: de monteur heeft u 4 keer gebeld
-    waarvan 2 keer op de vaste aansluiting. Helaas heb ik geen vaste
-    aansluiting dus puur onzin. Ik was gewoon thuis. Reactie Ziggo: we gaan de
-    monteur opnieuw inplannen. Volgende week dus. Krijg ik de volgende dag een
-    mail met een rekening van €85 voorrijkosten en kosten reparatie. Deze mail
-    is een dag later kennelijk door Ziggo uit mijn mailbox verwijderd. Ik heb
-    gelukkig een kopie gemaakt.
-    Opnieuw contact met Ziggo waarbij de klantenservice geen uitleg kan geven.
-    Deze dame had kennelijk het dossier niet gelezen met de eerdere contacten.
-    Reactie begon direct met Ziggo garandeerd 20mbps. Op mijn vraag waarom mijn
-    abonnement 250 mbps is en ik veel meer moet betalen kwam een ontwijkend
-    antwoord.
-    Ik kijk nu uit naar de aanleg van glasvezel door de KPN. Ik stap dan
-    gelijk over. Wat een waardeloos bedrijf Ziggo.
-    """
-
-in_4 = r"""
-    Wat een vreselijke zaak. Na alles gelezen te hebben zijn wij
-    niet de enige met klachten . Twee weken geleden wasmachine besteld
-    en betaald . Al drie keer moeten bellen en ze behandelen je als oud
-    vuil . Zeer invriendelijk niks wetend personeel. Chefs en leidinggevende
-    krijg je never nooit te spreken. Wel geld innen maar niks leveren
-    en dan zeggen geduld hebben 😱
-    Denk dat het tijd wordt dat wij consumentenbond en radar moeten gaan
-    inschakelen want mediamarkt MOET gestopt worden !!! Duizenden
-    gedupeerden inmiddels. Wat is dit ? Ik heb inmiddels op verschillende
-    sites en media’s een klacht ingediend en het verhaal verteld van ons
-    en duizenden anderen 😡. Net een pipo aan de lijn , een meisje wat
-    totaal niet klantvriendelijk is enz.. en wat zegt deze domme tut;
-    u kiest hier zelf voor
-       """
-in_5 = r"""
-                We gaan naar het zwembad én naar de speeltuin!
-                Koop nú nieuwe loten.
-                Frans Langer, dé behanger.
-                We hebben daar zó lang staan wachten.
-                Niet lanterfanten, wérken!
-                Inleveren vóór 1 december.
-                Was het maar wáár!
-                Schrééuw niet zo!
-                Dóé iets!
-                Déúr dicht!
-                Níéts zeggen
-                """
+            # look for lines that follow the pattern
+            # newline "YYYY-MM-DD
+            # and split along that pattern
+            fullfile = f.read()
+            records = re.split(r'(^"\d{4}-\d{2}-\d{2})', fullfile, flags=re.DOTALL|re.MULTILINE)
+            records.pop(0)
+            records = [i+j for i, j in zip(records[0:len(records):2],
+                                           records[1:len(records):2],)]
+            for r in records:
+                print(r.split(','))
 
 if __name__ == '__main__':
-    print(bag_of_words(pre_process_text(in_5)))
-    print(bag_of_words(pre_process_text(in_4)))
-    print(bag_of_words(pre_process_text(in_3)))
+    my_normalizer = normalizer()
+    my_normalizer.read_csv_file('sample_Marc.csv')
